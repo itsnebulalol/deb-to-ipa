@@ -1,0 +1,30 @@
+name: Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      deb:
+        description: "Direct URL to deb file"
+        required: true
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Convert deb to IPA
+        run: |
+          curl -L -o ${{ github.workspace }}/app.deb ${{ github.event.inputs.deb }}
+          dpkg-deb -X ${{ github.workspace }}/app.deb ${{ github.workspace }}/app
+
+          mkdir -p ${{ github.workspace }}/ipa/Payload
+          cp -R ${{ github.workspace }}/app/* ${{ github.workspace }}/ipa/Payload
+          
+          cd ${{ github.workspace }}/ipa
+          zip -r ${{ github.workspace }}/App.ipa .
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          name: App
+          path: ${{ github.workspace }}/App.ipa
